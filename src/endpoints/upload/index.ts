@@ -1,20 +1,30 @@
 import {z} from "zod";
 import {defaultEndpointsFactory, ez} from "express-zod-api";
 
+
+
 export const uploadEndpoints = defaultEndpointsFactory
     .build({
-        shortDescription: "Protected route - example",
-        description: "You can't access this endpoint without valid Bearer token in Header - authorization.",
+        shortDescription: "example",
+        description: "description.",
         method: "post", // or methods: ["get", "post", ...]
         input: z.object({
-            files: z.array(ez.upload()),
+            files: z.union([z.array(ez.upload()), ez.upload()]).transform(files => Array.isArray(files) ? files : [files]),
             details: z.string()
         }),
         output: z.object({
-            greetings: z.string().toUpperCase(),
+            greetings: z.any(),
         }),
         handler: async ({ input, options, logger }) => {
-            console.log({input: input})
-            return { greetings: "Yo"}
+            console
+            const {files, details} = input;
+            const _details = JSON.parse(details);
+            console.log("here", _details)
+            
+            // logger.info("here",_details)
+            // logger.info("Hello, world!");
+            return { greetings: _details}
         },
 });
+
+

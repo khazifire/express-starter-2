@@ -6,35 +6,36 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import {env} from "@/config/env";
 import {isUrlValid} from "@/utils/routing";
+import express from "express";
+import { attachRouting } from "express-zod-api";
+import { routing } from "@/routes";
+import { update } from "lodash";
+import fileUpload from "express-fileupload";
 
 const documentation = yaml.parse(
     readFileSync(env.DOC_PATH, "utf-8"),
 );
-export const config = createConfig({
-    startupLogo: false,
-    server: {
-        upload: true,
-        listen: env.PORT, // port, UNIX socket or options
-        beforeRouting: ({ app}) => {
-            app.options('*', (req, res) => {
-                res.header('Access-Control-Allow-Origin', '*');
-                res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-                res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-                res.sendStatus(200);
-            });
-            app.use(helmet());
-            app.use(cookieParser())
-            app.get("/", (_, res) => res.json({status: 200}));
-            app.use("/docs", ui.serve, ui.setup(documentation));
-            app.use((req, res, next) => {
-                if (!isUrlValid(req.url)) {
-                    res.status(404).json({status: "error", error: {message: "Page not found."}});
-                    return;
-                }
-                next();
-            });
-        },
-    },
+
+export const app = express()
+app.use(helmet());
+app.use(cookieParser());
+app.use(express.json());
+app.use(fileUpload())  
+
+app.get("/", (req, res) =>
+    res.send({
+      system: "Ticketing",
+      host: req.get("host"),
+    })
+  );;
+
+export const config = attachRouting(
+    {
+    app,
     cors: true,
+    startupLogo: false,
     logger: { level: "debug", color: true },
-});
+}, routing);
+
+
+
